@@ -101,14 +101,14 @@ export async function POST(request: NextRequest) {
             plan: {
               company_id: companyId,
               product_id: product.id,
-              initial_price: amount * 100, // Convert to cents
+              initial_price: amount, // Use dollars directly
               currency: 'usd',
               plan_type: 'one_time',
             },
           });
           
           console.log(`Checkout configuration created:`, checkoutConfig);
-          productIds[amountKey] = checkoutConfig.id;
+          productIds[amountKey] = checkoutConfig.plan.id;
           
         } catch (error) {
           console.error(`Error creating tip product for $${amount}:`, error);

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from "@whop/react/components";
+import { useIframeSdk } from "@whop/react/iframe";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Sparkles, DollarSign, Settings, ExternalLink } from 'lucide-react';
 
@@ -33,6 +34,7 @@ export default function TipJarExperience({
 	const [customAmount, setCustomAmount] = useState<string>('');
 	const [isLoading, setIsLoading] = useState(true);
 	const [isProcessing, setIsProcessing] = useState(false);
+	const sdk = useIframeSdk();
 
 	// Check if current user is the owner of the experience/company
 	const isOwner = user?.id === fullCompany?.owner_user?.id || user?.id === experience?.ownerId;
@@ -103,8 +105,21 @@ export default function TipJarExperience({
 				throw new Error('Product not found for this amount');
 			}
 
-			// Redirect to Whop checkout using checkout configuration
-			window.location.href = `https://whop.com/checkout/${productId}`;
+			// Use Whop in-app purchase modal
+			if (sdk) {
+				const result = await sdk.inAppPurchase({
+					planId: productId,
+				});
+				
+				if (result.status === 'ok') {
+					console.log('Payment successful:', result.data);
+				} else {
+					console.error('Payment failed:', result.error);
+				}
+			} else {
+				// Fallback to redirect if SDK not available
+				window.location.href = `https://whop.com/checkout/${productId}`;
+			}
 
 		} catch (error) {
 			console.error('Error processing tip:', error);
