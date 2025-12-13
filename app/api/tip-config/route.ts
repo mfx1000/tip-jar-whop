@@ -78,33 +78,45 @@ export async function POST(request: NextRequest) {
       productIds = existingDoc.data()?.productIds || {};
     }
 
-    // Create/update products for each tip amount with correct API structure
+    // Create/update products for each tip amount - simplified approach
     for (const amount of tipAmounts) {
       const amountKey = amount.toString();
       
       // Only create new product if it doesn't exist
       if (!productIds[amountKey]) {
         try {
-          // Create product with correct API structure
+          console.log(`Creating product for $${amount} with companyId: ${companyId}`);
+          
+          // Create product first
           const product = await whopsdk.products.create({
             company_id: companyId,
             title: `$${amount} Tip`,
             description: `Support creator with a $${amount} tip`,
-            visibility: 'hidden',
           });
+          
+          console.log(`Product created:`, product);
           
           // Create plan for the product
           const plan = await whopsdk.plans.create({
             company_id: companyId,
             product_id: product.id,
             plan_type: 'one_time',
-            initial_price: amount * 100, // Whop uses cents
+            initial_price: amount * 100, // Convert to cents
             currency: 'usd',
           });
           
+          console.log(`Plan created:`, plan);
           productIds[amountKey] = plan.id;
-        } catch (productError) {
-          console.error(`Error creating product for $${amount}:`, productError);
+          
+        } catch (error) {
+          console.error(`Error creating product for $${amount}:`, error);
+          
+          // For debugging - log the full error details
+          if (error instanceof Error) {
+            console.error(`Error message: ${error.message}`);
+            console.error(`Error stack: ${error.stack}`);
+          }
+          
           // Continue with other amounts if one fails
         }
       }
