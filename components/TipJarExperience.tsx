@@ -103,7 +103,7 @@ export default function TipJarExperience({
 				throw new Error('Product not found for this amount');
 			}
 
-			// Redirect to Whop checkout
+			// Redirect to Whop checkout using checkout configuration
 			window.location.href = `https://whop.com/checkout/${productId}`;
 
 		} catch (error) {

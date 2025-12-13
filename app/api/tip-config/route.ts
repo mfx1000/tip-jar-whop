@@ -78,38 +78,40 @@ export async function POST(request: NextRequest) {
       productIds = existingDoc.data()?.productIds || {};
     }
 
-    // Create/update products for each tip amount - simplified approach
+    // Create/update products for each tip amount using correct Whop flow
     for (const amount of tipAmounts) {
       const amountKey = amount.toString();
       
       // Only create new product if it doesn't exist
       if (!productIds[amountKey]) {
         try {
-          console.log(`Creating product for $${amount} with companyId: ${companyId}`);
+          console.log(`Creating tip product for $${amount} with companyId: ${companyId}`);
           
-          // Create product first
+          // Create access pass product first
           const product = await whopsdk.products.create({
             company_id: companyId,
             title: `$${amount} Tip`,
             description: `Support creator with a $${amount} tip`,
           });
           
-          console.log(`Product created:`, product);
+          console.log(`Access pass product created:`, product);
           
-          // Create plan for the product
-          const plan = await whopsdk.plans.create({
-            company_id: companyId,
-            product_id: product.id,
-            plan_type: 'one_time',
-            initial_price: amount * 100, // Convert to cents
-            currency: 'usd',
+          // Create checkout configuration for the product
+          const checkoutConfig = await whopsdk.checkoutConfigurations.create({
+            plan: {
+              company_id: companyId,
+              product_id: product.id,
+              initial_price: amount * 100, // Convert to cents
+              currency: 'usd',
+              plan_type: 'one_time',
+            },
           });
           
-          console.log(`Plan created:`, plan);
-          productIds[amountKey] = plan.id;
+          console.log(`Checkout configuration created:`, checkoutConfig);
+          productIds[amountKey] = checkoutConfig.id;
           
         } catch (error) {
-          console.error(`Error creating product for $${amount}:`, error);
+          console.error(`Error creating tip product for $${amount}:`, error);
           
           // For debugging - log the full error details
           if (error instanceof Error) {
